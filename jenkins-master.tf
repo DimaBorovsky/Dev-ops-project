@@ -5,4 +5,5 @@ resource "aws_instance" "jenkins-master" {
   tags = {
     name = "jenkins-master"
   }
+  security_groups = [aws_security_group.jenkins_allow_ssh-master.id,aws_security_group.allow_ssh-ansible-master.id,aws_security_group.jenkins-node-allow-master.id]
 }
