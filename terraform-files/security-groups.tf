@@ -7,6 +7,13 @@ resource "aws_security_group" "allow_ssh-ansible-master" {
     protocol = "tcp"
     cidr_blocks = [aws_subnet.public_subnet.cidr_block]
   }
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["x.x.x.x/x"]
+  }
+
 }
 
 

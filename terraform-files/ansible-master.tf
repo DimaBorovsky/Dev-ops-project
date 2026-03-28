@@ -4,6 +4,9 @@ resource "aws_instance" "ansible-master" {
   tags = {
     Name = "ansible-master"
   }
+  associate_public_ip_address = true
+  subnet_id = aws_subnet.public_subnet.id
   user_data = "~/Desktop/Dev-ops-project-06/terraform-files/user-data.sh"
-  security_groups = [aws_security_group.allow_ssh-ansible-master.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh-ansible-master.id]
+  key_name = "ec2-key-2"
 }
