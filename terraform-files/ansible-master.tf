@@ -4,7 +4,6 @@ resource "aws_instance" "ansible-master" {
   tags = {
     Name = "ansible-master"
   }
-
-  user_data =file("./user-data.sh")
-
+  user_data = "~/Desktop/Dev-ops-project-06/terraform-files/user-data.sh"
+  security_groups = [aws_security_group.allow_ssh-ansible-master.id]
 }

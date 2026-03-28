@@ -1,7 +1,8 @@
 .idea/
 .venv/
-**/.terraform/*
 *.tfstate
 *.tfstate.*
 __pycache__/
 *.pyc
+./terraform-files/.terraform.lock.hcl
+./terraform-files/.terraform
