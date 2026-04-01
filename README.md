@@ -51,28 +51,92 @@ Before using this Terraform configuration, make sure you have:
 ## Usage
 
 Initialize Terraform:
-
 ```bash
 terraform init
 ```
 
 Review the execution plan:
-
 ```bash
 terraform plan
 ```
 
 Apply the configuration:
-
 ```bash
 terraform apply
 ```
 
 Destroy the infrastructure when no longer needed:
-
 ```bash
 terraform destroy
 ```
+
+## Passwordless SSH Setup
+
+As part of this project we configured the `ansible-master` server to SSH into other EC2 instances without a password. This is required for tools like Ansible to manage remote servers automatically.
+
+### How It Works
+
+- The **private key** lives on the master server (`~/.ssh/id_ed25519`)
+- The **public key** is placed in `~/.ssh/authorized_keys` on each target server
+- SSH reads `authorized_keys` on every connection, so no reload is needed
+
+### Steps Followed
+
+1. Generated an SSH key pair on the `ansible-master` server:
+```bash
+ssh-keygen -t ed25519
+```
+
+2. Copied the `.pem` key from the local machine to the master server so it could authenticate during setup:
+```bash
+# Run from local machine
+scp -i ~/.ssh/ec2-key-2.pem ~/.ssh/ec2-key-2.pem ubuntu@<master-public-ip>:~/.ssh/
+chmod 400 ~/.ssh/ec2-key-2.pem
+```
+
+3. Used `ssh-copy-id` to install the master's public key onto each target server:
+```bash
+ssh-copy-id -i ~/.ssh/id_ed25519.pub -o "IdentityFile=/home/ubuntu/.ssh/ec2-key-2.pem" ubuntu@<target-private-ip>
+```
+
+4. Configured `~/.ssh/config` on the **ansible-master** to avoid specifying the `.pem` on every connection:
+```
+Host server1
+    HostName 10.0.1.152
+    User ubuntu
+    IdentityFile ~/.ssh/ec2-key-2.pem
+
+Host server2
+    HostName 10.0.1.x
+    User ubuntu
+    IdentityFile ~/.ssh/ec2-key-2.pem
+```
+```bash
+chmod 600 ~/.ssh/config
+```
+
+Now from the master you can connect using just:
+```bash
+ssh server1
+ssh server2
+```
+
+Once passwordless SSH is fully working with the `id_ed25519` key, the `IdentityFile` lines can be removed as SSH will use that key by default:
+```
+Host server1
+    HostName 10.0.1.152
+    User ubuntu
+
+Host server2
+    HostName 10.0.1.x
+    User ubuntu
+```
+
+### Network Notes
+
+- The `ansible-master` connects to other servers using **private IPs** since all instances are in the same VPC
+- Target servers do not need public IPs, keeping the infrastructure more secure
+- Only the `ansible-master` is exposed to the internet
 
 ## Notes
 
@@ -85,13 +149,11 @@ terraform destroy
 The current `user_data` value appears to be set as a local file path string. In Terraform, that usually will not execute the script content itself.
 
 Current pattern:
-
 ```hcl
 user_data = "~/Desktop/Dev-ops-project-06/terraform-files/user-data.sh"
 ```
 
 A more portable approach is:
-
 ```hcl
 user_data = file("${path.module}/user-data.sh")
 ```
